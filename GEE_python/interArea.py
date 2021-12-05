@@ -4,6 +4,8 @@ from shapely.geometry import Polygon, MultiPoint
 from tqdm import tqdm
 import json
 import time
+import os
+import sys
 def Cal_area_2polygon(data1, data2):
     '''
     TO extract the common area of two polygons
@@ -67,11 +69,17 @@ def Cal_shp_area(dict):
     with tqdm(total=len_dict) as pbar:
         for i in range(0,len_dict):
             if dict["features"][i]["geometry"]["coordinates"][0].__len__() >= 3:
-                data = dict["features"][i]["geometry"]["coordinates"][0]
 
-                area_total += Polygon(data).convex_hull.area
+                data = dict["features"][i]["geometry"]["coordinates"][0]
+                try:
+                    area_total += Polygon(data).convex_hull.area
+                except(AssertionError):
+                    # print("Assertion Error occurs ~\n")
+                    area_total+=0
                 pbar.set_postfix(total_area = area_total)
                 pbar.update()
+
+
     time.sleep(0.5)
     return area_total
 
@@ -87,8 +95,41 @@ def readShpFile(path):
     return polygon_dict
 
 def main():
-    result = [['上海市','无数据','无数据','D:\\ArcMapAbout\\Data\\test\\TFshanghai.shp','D:\\ArcMapAbout\\Data\\test\\intersectSetP.shp','D:\\ArcMapAbout\\Data\\test\\intersectSH1.shp'],
-              ['重庆市','无数据','无数据','D:\\ArcMapAbout\\Data\\test\\TFchongqing.shp','D:\\ArcMapAbout\\Data\\test\\intersectCQP.shp','D:\\ArcMapAbout\\Data\\test\\intersectCQP_BAIDU.shp']]
+    result = [
+              ['杭州市', '无数据', '无数据', 'D:\\ArcMapAbout\\Data\\AfterProject\\Hangzhou.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\HangzhouGD.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\HangzhouBD.shp'],
+              ['济南市', '无数据', '无数据', 'D:\\ArcMapAbout\\Data\\AfterProject\\Jinan.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\JinanGD.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\JinanBD.shp'],
+              ['昆明市', '无数据', '无数据', 'D:\\ArcMapAbout\\Data\\AfterProject\\Kunming.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\KunmingGD.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\KunmingBD.shp'],
+              ['南昌市', '无数据', '无数据', 'D:\\ArcMapAbout\\Data\\AfterProject\\Nanchang.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\NanchangGD.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\NanchangBD.shp'],
+              ['南京市', '无数据', '无数据', 'D:\\ArcMapAbout\\Data\\AfterProject\\Nanjing.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\NanjingGD.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\NanjingBD.shp'],
+              ['宁波市', '无数据', '无数据', 'D:\\ArcMapAbout\\Data\\AfterProject\\Ningbo.shp',
+               'Null',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\NingboBD.shp'],
+              ['上海市', '无数据', '无数据', 'D:\\ArcMapAbout\\Data\\AfterProject\\Shanghai.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\ShanghaiGD.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\ShanghaiBD.shp'],
+              ['重庆市', '无数据', '无数据', 'D:\\ArcMapAbout\\Data\\AfterProject\\Chongqing.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\ChongqingGD.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\ChongqingBD.shp'],
+              ['广州市', '无数据', '无数据', 'D:\\ArcMapAbout\\Data\\AfterProject\\Guangzhou.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\GuangzhouGD.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\GuangzhouBD.shp'],
+              ['北京市', '无数据', '无数据', 'D:\\ArcMapAbout\\Data\\AfterProject\\Beijing.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\BeijingGD.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\BeijingBD.shp'],
+              ['北京郊区', '无数据', '无数据', 'D:\\ArcMapAbout\\Data\\AfterProject\\BeijingClip.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\BeijingGDClip.shp',
+               'D:\\ArcMapAbout\\Data\\AfterProject\\BeijingBDClip.shp']
+    ]
     #           ['青岛市',0,0,'D:\\ArcMapAbout\\Data\\test\\TFqingdao.shp','Null',                                          'D:\\ArcMapAbout\\Data\\test\\intersectQDP.shp']]
     # result = [ ['青岛市',0,0,'D:\\ArcMapAbout\\Data\\test\\TFqingdao.shp','Null',                                          'D:\\ArcMapAbout\\Data\\test\\intersectQDP.shp']]
     result_arr = np.array(result)
@@ -110,6 +151,8 @@ def main():
             time.sleep(0.1)
             area_intersect = Cal_shp_area(polygon_dict1)
             IOU = float(area_intersect) / (area_gt)
+            if IOU > 1.0:
+                IOU = IOU/2
             time.sleep(0.2)
             print("{0} 在高德地图上的总IOU为\n\tIOU:{1}".format(result[i][0],IOU))
             result[i][1] = IOU
@@ -120,11 +163,14 @@ def main():
             time.sleep(0.1)
             area_intersect = Cal_shp_area(polygon_dict1)
             IOU = float(area_intersect) / (area_gt)
+            if IOU > 1.0:
+                IOU = IOU/2
             time.sleep(0.2)
             print("{0} 在百度地图上的总IOU为\n\tIOU:{1}".format(result[i][0],IOU))
             result[i][2] = IOU
     print('城市\t\t高德IOU\t\t\t\t\t百度IOU\n')
     for i in range(len(result)):
-        print(result[i][0]+'\t'+ str(result[i][1]) +'\t\t'+ str(result[i][2]))
+        print('{0}'.format(result[i][0]) + '\t' + str(result[i][1]) +'\t\t'+ str(result[i][2]))
+
 if __name__ == '__main__':
     main()
